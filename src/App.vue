@@ -5,25 +5,55 @@
         <div
             class="border-b border-gray-200 py-4 flex items-center justify-between mb-16 sm:mb-20 -mx-4 px-4 sm:mx-0 sm:px-0">
           <h1>Vue Youtube KTV Subtitles Demo</h1>
-          <input v-model="youtubeUrl" class="bg-gray-200 px-4 py-2 rounded-lg w-1/3"/>
-          <button class="bg-gray-200 px-4 py-2 rounded-lg" @click="ASSDialog.visible=true">匯入 ASS 字幕檔案</button>
+          <input :value="youtubeUrl" class="bg-gray-200 px-4 py-2 rounded-lg w-1/3"
+                 @change="setYoutubeURLValue"/>
+          <toolbar @visible="ASSDialog.visible=!ASSDialog.visible" @fullscreen="fullscreenToggle"/>
         </div>
       </nav>
     </header>
-    <section class="relative z-10 text-center max-w-screen-lg xl:max-w-screen-xl mx-auto ">
+    <section ref="fullscreen" class="relative z-10 text-center max-w-screen-lg xl:max-w-screen-xl mx-auto">
       <div class="relative px-4 sm:px-6 md:px-8 mb-14 sm:mb-20 xl:mb-8">
         <youtube ref="youtube" :video-id="youtubeViewer.id" @playing="playing" @progress="youtubeEnd"
                  @paused="youtubeEnd" @ended="youtubeEnd"
                  class="w-full h-screen"
         />
-        <div v-if="youtubeViewer.playing" class="ktv-subtitle">
-          <p class="float-left" v-bind:data-title="getSentence(0) | getCombine" :class="`length-${getPercentage(getSentence(0))}`">
-            {{ getSentence(0) | getCombine }}
+        <div class="ktv-subtitle">
+          <!--          <subtitle class="float-left" :youtube-viewer="youtubeViewer" :index="0" :dialogue="getDialogue"/>-->
+          <p class="float-left" :class="[fontSize, fontColor]">
+            <template v-if="hasTag(getSentence(0))">
+              <template v-for="(word, idx)  in getSentence(0)[2]">
+              <span class="split" :key="idx" v-bind:data-title="word.text"
+                    :class="`length-${getPercentage(getSentence(0), idx)}`"
+              >{{ word.text }}</span>
+              </template>
+            </template>
+            <span class="split" v-else>{{ getSentence(0) | getCombine }}</span>
           </p>
           <p class="clear-left"></p>
-          <p class="float-right" v-bind:data-title="getSentence(1) | getCombine" v-bind:data-width="20"  :class="`length-${getPercentage(getSentence(1))}`">
-            {{ getSentence(1) | getCombine }}
+          <p class="float-right" :class="[fontSize, fontColor]">
+            <template v-if="hasTag(getSentence(1))">
+              <template v-for="(word, idx)  in getSentence(1)[2]">
+              <span class="split" :key="idx" v-bind:data-title="word.text"
+                    :class="`length-${getPercentage(getSentence(1), idx)}`"
+              >{{ word.text }}</span>
+              </template>
+            </template>
+            <span class="split" v-else>{{ getSentence(1) | getCombine }}</span>
           </p>
+        </div>
+      </div>
+      <div class="ktv-toolbar" v-if="fullscreen">
+        <toolbar @visible="ASSDialog.visible=!ASSDialog.visible" @fullscreen="fullscreenToggle"/>
+        <div v-if="ASSDialog.visible" class="bg-white rounded-lg my-2">
+          <div class="text-left divide-y-4 divide-black divide-opacity-25">
+            <settings>
+              <div class="p-5">
+                <label for="url">Youtube網址</label>
+                <input id="url" :value="youtubeUrl" class="bg-gray-200 px-4 py-2 rounded-lg w-full"
+                       @change="setYoutubeURLValue"/>
+              </div>
+            </settings>
+          </div>
         </div>
       </div>
     </section>
@@ -33,16 +63,8 @@
       </template>
       <template slot="body">
         <h1 class="text-lg pl-3">可以上傳或貼上ASS文字內容</h1>
-        <div class="divide-y-4 divide-black divide-opacity-25">
-          <div class="p-5">
-            <label for="text">上傳ASS檔案</label>
-            <input type="file" class="w-full min-h-2/3 bg-gray-200 px-4 py-2 rounded-lg" @change="handleFiles"/>
-          </div>
-          <div class="p-5">
-            <label for="text">ASS文字內容</label>
-            <textarea id="text" v-model="ASSDialog.text"
-                      class="w-full min-h-2/3 bg-gray-200 px-4 py-2 rounded-lg"></textarea>
-          </div>
+        <div>
+          <settings></settings>
         </div>
       </template>
       <template slot="footer">
@@ -59,19 +81,22 @@
 <script>
 import {Youtube} from 'vue-youtube'
 import modal from "@/components/modal";
-
+import settings from "@/components/settings"
+import {api as fullscreen} from 'vue-fullscreen'
 import {parse} from 'ass-compiler';
+import {mapActions, mapGetters} from "vuex";
+import Toolbar from "@/components/toolbar";
+
 
 export default {
   name: 'App',
-  components: {Youtube, modal},
+  components: {Toolbar, Youtube, modal, settings},
   data() {
     return {
       ASSDialog: {
         visible: false,
         text: ''
       },
-      youtubeUrl: '',
       youtubeViewer: {
         id: '',
         time: 0,
@@ -79,7 +104,8 @@ export default {
         interval: null,
         playing: false,
       },
-      parsedASS: ''
+      parsedASS: '',
+      fullscreen: false
     }
   },
   filters: {
@@ -89,6 +115,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['youtubeUrl', 'ASSText', 'fontSize', 'fontColor']),
     getDialogue() {
       if (!this.parsedASS.events || !this.parsedASS.events.dialogue) return null
       return this.parsedASS.events.dialogue
@@ -100,10 +127,14 @@ export default {
   },
   watch: {
     youtubeUrl(value) {
-      const youtubeUrl = new URL(value)
-      this.youtubeViewer.id = youtubeUrl.searchParams.get('v')
+      try {
+        const youtubeUrl = new URL(value)
+        this.youtubeViewer.id = youtubeUrl.searchParams.get('v')
+      } catch (e) {
+        // error
+      }
     },
-    'ASSDialog.text'(value) {
+    ASSText(value) {
       this.parsedASS = parse(value)
     },
     'youtubeViewer.playing'(value) {
@@ -112,19 +143,24 @@ export default {
       }
     },
     getNowTimer(value) {
-      if (value > 0) {
+      if (value >= 0) {
         if (value % 2 === 0) {
-          this.youtubeViewer.timerIndex = [value + 1, value]
-        } else {
           this.youtubeViewer.timerIndex = [value, value + 1]
+        } else {
+          this.youtubeViewer.timerIndex = [value + 1, value]
         }
       }
     }
   },
-  mounted() {
-    this.youtubeUrl = 'https://www.youtube.com/watch?v=PlCbgZxonJs'
-  },
   methods: {
+    ...mapActions(['setYoutubeURL']),
+    fullscreenToggle() {
+      fullscreen.toggle(this.$refs['fullscreen'], {
+        teleport: false, callback: (isFullscreen) => {
+          this.fullscreen = isFullscreen
+        },
+      })
+    },
     playing() {
       this.youtubeViewer.playing = true
       if (this.$refs['youtube']) {
@@ -142,45 +178,108 @@ export default {
         this.youtubeViewer.time = await this.$refs['youtube'].player.getCurrentTime()
       }
     },
-    handleFiles(event) {
-      let reader = new FileReader();
-      reader.onload = (e) => {
-        this.ASSDialog.text = e.target.result
-      }
-      reader.readAsText(event.target.files[0], "UTF-8")
+    setYoutubeURLValue(event) {
+      this.setYoutubeURL(event.target.value)
+    },
+    hasTag(sentence) {
+      return !(!sentence[2] || !sentence[2][0] || !sentence[2][0]['tags'] || !sentence[2][0]['tags'][0] || !sentence[2][0]['tags'][0]['k'])
     },
     getSentence(index) {
       const timer = this.youtubeViewer.timerIndex
-      if (timer.length < 2) return null
-      return [timer[index], this.getDialogue[timer[index]]]
+      if (timer.length < 2 || !this.getDialogue[timer[index]]) return [-1, {}, []]
+      if (!this.getDialogue[timer[index]].Text || !this.getDialogue[timer[index]].Text.parsed) return [timer[index], this.getDialogue[timer[index]], []]
+      return [timer[index], this.getDialogue[timer[index]], this.getDialogue[timer[index]].Text.parsed]
     },
-    getPercentage(value) {
-      if (!value || !value[1] || !value[1].Text || !value[1].Text.parsed) return ''
-      let Start = parseFloat(value[1].Start)
-      let Long = (this.youtubeViewer.time - Start) *100
-      let TotalSplit = value[1].Text.parsed.reduce((total, current) => (total + current['tags'][0]['k']), 0)
-      if (Long > 0 && Long <= TotalSplit) {
-        return Math.round(Long / TotalSplit * 100)
-      } else if (Long <= 0) {
-        return 0
-      } else {
+    getPercentage(value, wordIndex) {
+      if (!value || !value[1] || !value[1].Text || !value[1].Text.parsed) return 0
+      let start = parseFloat(value[1].Start)
+      let now = this.youtubeViewer.time * 100
+      let wordSplitStart = (value[1].Text.parsed.slice(0, wordIndex).reduce((total, current) => (total + current['tags'][0]['k']), 0)) + start * 100
+      let wordSplitEnd = (value[1].Text.parsed.slice(0, wordIndex + 1).reduce((total, current) => (total + current['tags'][0]['k']), 0)) + start * 100
+      if (now > wordSplitStart && now < wordSplitEnd) {
+        return Math.round((now - wordSplitStart) / value[1].Text.parsed[wordIndex]['tags'][0]['k'] * 100)
+      } else if (now >= wordSplitEnd) {
         return 100
+      } else if (now <= wordSplitStart) {
+        return 0
       }
     }
   }
 }
 </script>
 
-<style lang="scss">
-.ktv-subtitle {
-  @apply absolute p-10 text-7xl w-11/12 inset-x-auto;
-  letter-spacing: 7px;
-  bottom: 40px;
+<style lang="scss" scoped>
+.ktv-toolbar {
+  @apply absolute p-2 z-50 top-0 right-10;
+}
 
-  p {
-    @apply relative text-white font-black;
+.ktv-subtitle {
+  @apply absolute p-10 text-6xl inset-x-auto w-11/12;
+  //flex flex-wrap justify-center
+  letter-spacing: 7px;
+  bottom: 50px;
+
+  .lg {
+    @apply md:text-7xl text-6xl;
     text-stroke: 2px black;
     -webkit-text-stroke: 2px black;
+
+    &::before {
+      text-stroke: 2px white;
+      -webkit-text-stroke: 2px white;
+    }
+  }
+
+  .md {
+    @apply md:text-6xl text-5xl;
+    text-stroke: 1.5px black;
+    -webkit-text-stroke: 1.5px black;
+
+    &::before {
+      text-stroke: 1.5px white;
+      -webkit-text-stroke: 1.5px white;
+    }
+  }
+
+  .sm {
+    @apply md:text-5xl text-4xl;
+    text-stroke: 1px black;
+    -webkit-text-stroke: 1px black;
+
+    &::before {
+      text-stroke: 1px white;
+      -webkit-text-stroke: 1px white;
+    }
+  }
+
+  .blue {
+    .split {
+      &::before {
+        @apply bg-blue-500;
+      }
+    }
+  }
+
+  .red {
+    .split {
+      &::before {
+        @apply bg-red-500;
+      }
+    }
+  }
+
+  .green {
+    .split {
+      &::before {
+        @apply bg-green-500;
+      }
+    }
+  }
+
+  .split {
+    @apply relative text-white font-black;
+    text-stroke: 1.5px black;
+    -webkit-text-stroke: 1.5px black;
     white-space: nowrap;
     background-clip: text;
     -webkit-background-clip: text;
@@ -189,12 +288,9 @@ export default {
       @apply absolute bg-blue-500 font-black;
       content: attr(data-title);
       width: 0;
-      top: 0;
-      bottom: 0;
       left: 0;
-      right: 0;
-      text-stroke: 2px white;
-      -webkit-text-stroke: 2px white;
+      text-stroke: 1.5px white;
+      -webkit-text-stroke: 1.5px white;
       background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
