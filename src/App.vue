@@ -4,7 +4,7 @@
       <nav class="px-4 sm:px-6 md:px-8">
         <div
             class="border-b border-gray-200 py-4 flex items-center justify-between mb-16 sm:mb-20 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <h1>Vue Youtube KTV Subtitles Demo</h1>
+          <h1>{{ $t('NAME') }}</h1>
           <input :value="youtubeUrl" class="bg-gray-200 px-4 py-2 rounded-lg w-1/3"
                  @change="setYoutubeURLValue"/>
           <toolbar @visible="ASSDialog.visible=!ASSDialog.visible" @fullscreen="fullscreenToggle"/>
@@ -17,7 +17,7 @@
                  @paused="youtubeEnd" @ended="youtubeEnd"
                  class="w-full h-screen"
         />
-        <div class="ktv-subtitle">
+        <div v-if="youtubeViewer.playing" class="ktv-subtitle">
           <!--          <subtitle class="float-left" :youtube-viewer="youtubeViewer" :index="0" :dialogue="getDialogue"/>-->
           <p class="float-left" :class="[fontSize, fontColor]">
             <template v-if="hasTag(getSentence(0))">
@@ -48,7 +48,7 @@
           <div class="text-left divide-y-4 divide-black divide-opacity-25">
             <settings>
               <div class="p-5">
-                <label for="url">Youtube網址</label>
+                <label for="url">{{ $t('SETTINGS.YOUTUBE_URL') }}</label>
                 <input id="url" :value="youtubeUrl" class="bg-gray-200 px-4 py-2 rounded-lg w-full"
                        @change="setYoutubeURLValue"/>
               </div>
@@ -59,10 +59,10 @@
     </section>
     <modal v-if="ASSDialog.visible">
       <template slot="header">
-        <h1 class="text-xl bolder-600">匯入 ASS 字幕檔案</h1>
+        <h1 class="text-xl bolder-600">{{ $t('SETTINGS.NAME') }}</h1>
       </template>
       <template slot="body">
-        <h1 class="text-lg pl-3">可以上傳或貼上ASS文字內容</h1>
+        <h1 class="text-lg pl-3">{{ $t('SETTINGS.ALERT') }}</h1>
         <div>
           <settings></settings>
         </div>
@@ -70,7 +70,9 @@
       <template slot="footer">
         <div class="flex flex-wrap justify-end">
           <div>
-            <button class="text-left bg-gray-200 px-5 py-2" @click="ASSDialog.visible=!ASSDialog.visible">關閉</button>
+            <button class="text-left bg-gray-200 px-5 py-2" @click="ASSDialog.visible=!ASSDialog.visible">
+              {{ $t('CLOSE') }}
+            </button>
           </div>
         </div>
       </template>
@@ -79,6 +81,7 @@
 </template>
 
 <script>
+import i18n from '@/i18n'
 import {Youtube} from 'vue-youtube'
 import modal from "@/components/modal";
 import settings from "@/components/settings"
@@ -151,6 +154,9 @@ export default {
         }
       }
     }
+  },
+  mounted() {
+    i18n.locale = 'zh-tw'
   },
   methods: {
     ...mapActions(['setYoutubeURL']),

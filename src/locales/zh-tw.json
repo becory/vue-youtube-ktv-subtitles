@@ -1,0 +1,26 @@
+{
+  "CLOSE": "關閉",
+  "NAME": "Vue Youtube KTV 字幕展示",
+  "FULLSCREEN": "全螢幕",
+  "SETTINGS": {
+    "NAME": "KTV 字幕設定",
+    "YOUTUBE_URL": "Youtube 網址",
+    "ALERT": "開啟 或 貼上 ASS 字幕格式檔案",
+    "OPEN": "開啟字幕檔 (.ASS)",
+    "CONTENT": "ASS字幕內容 (可以將純文字格式貼在此)",
+    "FONT_SIZE":{
+      "NAME": "字體大小",
+      "lg": "大",
+      "md": "中",
+      "sm": "小"
+    },
+    "FONT_COLOR": {
+      "NAME": "字體顏色",
+      "blue": "藍",
+      "red": "紅",
+      "green": "綠"
+    },
+    "EXAMPLE": "範例展示",
+    "BUTTON": "字幕設定"
+  }
+}

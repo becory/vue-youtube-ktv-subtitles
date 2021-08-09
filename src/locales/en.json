@@ -1,0 +1,26 @@
+{
+  "CLOSE": "Close",
+  "NAME": "Vue Youtube KTV Subtitles Demo",
+  "FULLSCREEN": "Fullscreen",
+  "SETTINGS": {
+    "NAME": "KTV Subtitle Settings",
+    "YOUTUBE_URL": "Youtube URL",
+    "ALERT": "You can open or paste .ASS format text file.",
+    "OPEN": "Open File (.ASS)",
+    "CONTENT": "ASS Context (paste here.)",
+    "FONT_SIZE":{
+      "NAME": "Font Size",
+      "lg": "Large",
+      "md": "Middle",
+      "sm": "Small"
+    },
+    "FONT_COLOR": {
+      "NAME": "Font Color",
+      "blue": "Blue",
+      "red": "Red",
+      "green": "Green"
+    },
+    "EXAMPLE": "Example",
+    "BUTTON": "Settings"
+  }
+}
