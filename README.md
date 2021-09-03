@@ -2,7 +2,7 @@
 
 It's a simple frontend application to sync Youtube video & ktv subtitle.
 
-###Features
+### Features
 * Import subtitle
     * ASS format subtitle
     * Paste the ASS format into input area
