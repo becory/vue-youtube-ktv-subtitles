@@ -1,5 +1,13 @@
 # vue-youtube-ktv-subtitles
 
+It's a simple frontend application to sync Youtube video & ktv subtitle.
+
+###Features
+* Import subtitle
+    * ASS format subtitle
+    * Paste the ASS format into input area
+* Set custom font color & font size
+
 ## Project setup
 ```
 npm install
