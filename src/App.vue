@@ -57,14 +57,14 @@
         </div>
       </div>
     </section>
-    <modal v-if="ASSDialog.visible">
+    <modal v-show="ASSDialog.visible">
       <template slot="header">
         <h1 class="text-xl bolder-600">{{ $t('SETTINGS.NAME') }}</h1>
       </template>
       <template slot="body">
         <h1 class="text-lg pl-3">{{ $t('SETTINGS.ALERT') }}</h1>
         <div>
-          <settings></settings>
+          <settings ref="settings"></settings>
         </div>
       </template>
       <template slot="footer">
@@ -157,6 +157,7 @@ export default {
   },
   mounted() {
     i18n.locale = 'zh-tw'
+    this.$refs['settings'].setExample(this.$refs['settings'].examples[0])
   },
   methods: {
     ...mapActions(['setYoutubeURL']),
