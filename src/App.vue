@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <header class="relative z-10 max-w-screen-lg xl:max-w-screen-xl mx-auto">
+    <header class="relative z-10 max-w-screen-lg xl:max-w-screen-xl mx-auto md:block hidden">
       <nav class="px-4 sm:px-6 md:px-8">
         <div
             class="border-b border-gray-200 py-4 flex items-center justify-between mb-16 sm:mb-20 -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -11,7 +11,8 @@
         </div>
       </nav>
     </header>
-    <section ref="fullscreen" class="relative z-10 text-center max-w-screen-lg xl:max-w-screen-xl mx-auto">
+    <section ref="fullscreen"
+             class="relative z-10 text-center max-w-screen-lg xl:max-w-screen-xl mx-auto md:block hidden">
       <div class="relative px-4 sm:px-6 md:px-8 mb-14 sm:mb-20 xl:mb-8">
         <youtube ref="youtube" :video-id="youtubeViewer.id" @playing="playing" @progress="youtubeEnd"
                  @paused="youtubeEnd" @ended="youtubeEnd"
@@ -57,7 +58,7 @@
         </div>
       </div>
     </section>
-    <modal v-show="ASSDialog.visible">
+    <modal v-show="ASSDialog.visible" class="md:block hidden">
       <template slot="header">
         <h1 class="text-xl bolder-600">{{ $t('SETTINGS.NAME') }}</h1>
       </template>
@@ -77,6 +78,12 @@
         </div>
       </template>
     </modal>
+    <div class="relative z-10 max-w-screen-lg xl:max-w-screen-xl mx-auto md:block md:hidden block">
+      <div
+          class="rounded-xl max-w-screen-lg text-center h-full align-middle m-5 p-5 border-solid border-black border bg-gray-300">
+        不支援手機版
+      </div>
+    </div>
   </div>
 </template>
 
